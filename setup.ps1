@@ -1,6 +1,6 @@
 # variables
 $group = "rg-aks-istio-gateway"
-$cluster = "aksistiogtw"
+$cluster = "istiogwcluster"
 $location = "eastus2"
 
 # create resource group
