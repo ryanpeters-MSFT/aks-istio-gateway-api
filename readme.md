@@ -2,6 +2,8 @@
 
 This project deploys an AKS cluster with the Istio service mesh add-on and the Kubernetes Gateway API, exposing a simple nginx workload through an Istio-managed ingress gateway.
 
+The gateway is configured to use a static Azure Public IP so the ingress endpoint remains stable across redeployments.
+
 ## Prerequisites
 
 - Azure CLI with the `aks-preview` extension (`>= 19.0.0b4`)
@@ -37,9 +39,10 @@ The script will:
 
 1. Create a resource group `rg-aks-istio-gateway` in `eastus2`
 2. Create a 2-node AKS cluster with `--enable-azure-service-mesh` and `--enable-gateway-api`
-3. Apply the nginx, Gateway, and HTTPRoute manifests
-4. Wait for the Gateway to be programmed and print the external IP
-5. Send a test `curl` request to verify the deployment
+3. Create a static Standard Public IP in the AKS node resource group
+4. Apply the nginx, Gateway, and HTTPRoute manifests (injecting the static IP into `gateway.yaml`)
+5. Wait for the Gateway to be programmed and print the external IP
+6. Send a test `curl` request to verify the deployment
 
 ## How Istio Gateway API Works
 
@@ -74,6 +77,9 @@ metadata:
   name: nginx-gateway
 spec:
   gatewayClassName: istio
+  addresses:
+  - type: IPAddress
+    value: __STATIC_IP__
   listeners:
   - name: http
     port: 80
@@ -91,6 +97,8 @@ When this resource is applied, Istio's control plane (running in the `aks-istio-
 - A `PodDisruptionBudget` (min 1 available)
 
 This means you do not need to manually manage gateway infrastructure — Istio handles it entirely based on the `Gateway` spec.
+
+`spec.addresses` requests a specific ingress address. In this project, `setup.ps1` creates a static Azure Public IP and replaces `__STATIC_IP__` with the allocated address before applying the `Gateway`.
 
 `allowedRoutes.namespaces.from: Same` restricts which namespaces can attach `HTTPRoute` resources to this gateway, in this case only the `default` namespace.
 

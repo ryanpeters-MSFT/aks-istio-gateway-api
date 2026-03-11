@@ -5,6 +5,9 @@ metadata:
   namespace: default
 spec:
   gatewayClassName: istio
+  addresses:
+  - type: IPAddress
+    value: __STATIC_IP__
   listeners:
   - name: http
     port: 80
