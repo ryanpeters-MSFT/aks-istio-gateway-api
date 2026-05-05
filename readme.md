@@ -44,6 +44,30 @@ The script will:
 5. Wait for the Gateway to be programmed and print the external IP
 6. Send a test `curl` request to verify the deployment
 
+## Optional: Enable Sidecar Injection For a Namespace
+
+This sample does not require workload sidecars for Gateway API ingress to function, but you can optionally add pods in a namespace to the mesh by labeling that namespace with the installed AKS managed Istio revision.
+
+On AKS managed Istio, use the revision label format `istio.io/rev=asm-X-Y`. Do not use `istio-injection=enabled` for the managed add-on.
+
+```powershell
+# get the installed ASM revision
+$revision = az aks show -g rg-aks-istio-gateway -n istiogwcluster --query "serviceMeshProfile.istio.revisions[0]" -o tsv
+
+# enable sidecar injection for the namespace
+kubectl label namespace default istio.io/rev=$revision --overwrite
+
+# restart existing workloads so new pods get the sidecar
+kubectl rollout restart deployment/nginx -n default
+```
+
+To verify injection, check that the pod is `2/2` ready and includes the `istio-proxy` container:
+
+```powershell
+kubectl get pods -n default
+kubectl describe pod -n default (kubectl get pod -n default -l app=nginx -o jsonpath="{.items[0].metadata.name}")
+```
+
 ## How Istio Gateway API Works
 
 ### Background
